@@ -1,0 +1,13 @@
+{
+  "name": "figmabridge",
+  "version": "1.0.0",
+  "description": "Import TokenForge W3C token exports into Figma Variables",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "typescript": "^5.4.0"
+  }
+}

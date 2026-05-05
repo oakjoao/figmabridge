@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0e0e0f;
+    --surface:  #1a1a1c;
+    --surface2: #222226;
+    --border:   #2e2e33;
+    --fg:       #e2e8f0;
+    --fg-muted: #94a3b8;
+    --fg-dim:   #4b5563;
+    --accent:   #7c3aed;
+    --accent-h: #6d28d9;
+    --ok:       #22c55e;
+    --err:      #ef4444;
+    --warn:     #f59e0b;
+  }
+
+  html, body { width: 460px; height: 540px; overflow: hidden; }
+
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .logo-text { font-weight: 600; font-size: 13px; color: var(--fg); }
+  .logo-sub  { font-size: 10px; color: var(--fg-muted); margin-top: 1px; }
+  .btn-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--fg-dim); padding: 4px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: color .15s;
+  }
+  .btn-close:hover { color: var(--fg-muted); }
+
+  /* ── Main ── */
+  main { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Drop zone / paste area ── */
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragging {
+    border-color: var(--accent);
+    background: rgba(124,58,237,.04);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .drop-icon { font-size: 22px; margin-bottom: 6px; }
+  .drop-label { color: var(--fg-muted); font-size: 11px; line-height: 1.6; }
+  .drop-label strong { color: var(--accent); }
+
+  /* ── Textarea ── */
+  .paste-wrap { position: relative; }
+  textarea {
+    width: 100%;
+    height: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    resize: none;
+    outline: none;
+    transition: border-color .15s;
+  }
+  textarea::placeholder { color: var(--fg-dim); }
+  textarea:focus { border-color: var(--accent); }
+  .char-count { position: absolute; bottom: 8px; right: 10px; font-size: 10px; color: var(--fg-dim); pointer-events: none; }
+
+  /* ── Parse error ── */
+  .parse-error {
+    background: rgba(239,68,68,.08);
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--err);
+    display: none;
+  }
+  .parse-error.visible { display: block; }
+
+  /* ── Preview cards ── */
+  .preview { display: none; flex-direction: column; gap: 8px; }
+  .preview.visible { display: flex; }
+
+  .preview-header { font-size: 11px; color: var(--fg-muted); font-weight: 500; }
+
+  .collection-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .coll-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(124,58,237,.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .coll-body { flex: 1; min-width: 0; }
+  .coll-name { font-weight: 600; color: var(--fg); font-size: 12px; }
+  .coll-meta { color: var(--fg-muted); font-size: 10px; margin-top: 3px; }
+  .mode-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: var(--fg-muted);
+  }
+  .coll-count {
+    font-size: 22px; font-weight: 600; color: var(--accent);
+    line-height: 1;
+  }
+  .coll-count-label { font-size: 10px; color: var(--fg-dim); text-align: right; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); }
+
+  /* ── Buttons ── */
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    padding: 9px 16px;
+    transition: background .15s, opacity .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
+  .btn-primary:not(:disabled):hover { background: var(--accent-h); }
+  .btn-ghost {
+    background: var(--surface); color: var(--fg-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--fg); }
+  .btn-outline {
+    background: transparent; color: var(--accent);
+    border: 1px solid rgba(124,58,237,.35);
+    flex: 1; justify-content: center;
+  }
+  .btn-outline:not(:disabled):hover { background: rgba(124,58,237,.08); }
+
+  /* ── Spinner ── */
+  .spinner-wrap { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px 0; }
+  .spinner-wrap.visible { display: flex; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  .spinner-label { color: var(--fg-muted); font-size: 12px; }
+
+  /* ── Result ── */
+  .result { display: none; flex-direction: column; gap: 10px; }
+  .result.visible { display: flex; }
+  .result-banner {
+    border-radius: 8px; padding: 14px 16px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .result-banner.ok  { background: rgba(34,197,94,.08);  border: 1px solid rgba(34,197,94,.2); }
+  .result-banner.err { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.2); }
+  .result-icon { font-size: 18px; line-height: 1; }
+  .result-title { font-weight: 600; font-size: 12px; color: var(--fg); margin-bottom: 4px; }
+  .result-msg { font-size: 11px; color: var(--fg-muted); line-height: 1.5; }
+
+  .stat-row { display: flex; gap: 8px; }
+  .stat-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-num { font-size: 22px; font-weight: 600; line-height: 1; margin-bottom: 3px; }
+  .stat-num.ok { color: var(--ok); }
+  .stat-num.warn { color: var(--warn); }
+  .stat-num.err { color: var(--err); }
+  .stat-label { font-size: 10px; color: var(--fg-dim); }
+
+  .error-list {
+    background: var(--surface);
+    border: 1px solid rgba(239,68,68,.2);
+    border-radius: 8px;
+    max-height: 110px;
+    overflow-y: auto;
+  }
+  .error-list-header { padding: 8px 12px; font-size: 10px; color: var(--err); font-weight: 500; border-bottom: 1px solid var(--border); }
+  .error-item { padding: 5px 12px; font-size: 10px; color: var(--fg-muted); border-bottom: 1px solid var(--border); }
+  .error-item:last-child { border-bottom: none; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">F</div>
+    <div>
+      <div class="logo-text">FigmaBridge</div>
+      <div class="logo-sub">TokenForge → Figma Variables</div>
+    </div>
+  </div>
+  <button class="btn-close" id="btnClose" title="Close">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </button>
+</header>
+
+<main id="main">
+  <!-- ── Idle state ── -->
+  <div id="stateIdle">
+    <!-- File drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".json,application/json" />
+      <div class="drop-icon">📂</div>
+      <div class="drop-label">
+        <strong>Drop a .json file</strong> or click to browse<br/>
+        TokenForge W3C export
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;color:var(--fg-dim);font-size:10px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      or paste JSON below
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <div class="paste-wrap">
+      <textarea id="jsonInput" placeholder='{
+  "$metadata": { "tokenSetOrder": ["primitives", "semantic/light", "semantic/dark"] },
+  "primitives": {
+    "color-brand-500": { "$value": "#7c3aed", "$type": "color" },
+    ...
+  }
+}'></textarea>
+      <span class="char-count" id="charCount">0 chars</span>
+    </div>
+
+    <div class="parse-error" id="parseError"></div>
+
+    <!-- Preview (shown inline when JSON is valid) -->
+    <div class="preview" id="preview">
+      <div class="preview-header">Collections to create / update</div>
+      <div id="collectionCards"></div>
+    </div>
+
+    <div class="actions" id="idleActions" style="display:none;">
+      <button class="btn btn-ghost" id="btnClear">Clear</button>
+      <button class="btn btn-outline" id="btnGuide">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <rect x="1" y="1" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="7.5" y="1" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="1" y="7.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        Create Guide
+      </button>
+      <button class="btn btn-primary" id="btnImport">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M6.5 1v8M3 6l3.5 3.5L10 6M1.5 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Import Variables
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Importing state ── -->
+  <div class="spinner-wrap" id="stateImporting">
+    <div class="spinner"></div>
+    <div class="spinner-label" id="spinnerLabel">Working…</div>
+  </div>
+
+  <!-- ── Result state ── -->
+  <div class="result" id="stateResult">
+    <div class="result-banner ok" id="resultBanner">
+      <div class="result-icon">✓</div>
+      <div>
+        <div class="result-title" id="resultTitle">Import complete</div>
+        <div class="result-msg" id="resultMsg"></div>
+      </div>
+    </div>
+
+    <div class="stat-row" id="statRow"></div>
+    <div class="error-list" id="errorList" style="display:none;"></div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="btnAgain">Import another file</button>
+      <button class="btn btn-primary" id="btnDone">Done</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function $(id) { return document.getElementById(id); }
+
+function groupSets(order) {
+  const map = new Map();
+  for (const key of order) {
+    if (key.startsWith('$')) continue;
+    if (key.includes('/')) {
+      const slash = key.indexOf('/');
+      const prefix = key.slice(0, slash);
+      const rest = key.slice(slash + 1);
+      const cn = cap(prefix);
+      const mn = rest.split('/').map(cap).join(' ');
+      if (!map.has(cn)) map.set(cn, { name: cn, modes: [] });
+      map.get(cn).modes.push({ key, modeName: mn });
+    } else {
+      const cn = cap(key);
+      map.set(cn, { name: cn, modes: [{ key, modeName: 'Default' }] });
+    }
+  }
+  return [...map.values()];
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function countTokens(data, keys) {
+  const names = new Set();
+  let colors = 0, numeric = 0;
+  for (const key of keys) {
+    const group = data[key] ?? {};
+    for (const [name, def] of Object.entries(group)) {
+      if (!names.has(name)) {
+        names.add(name);
+        if (def.$type === 'color') colors++;
+        else numeric++;
+      }
+    }
+  }
+  return { total: names.size, colors, numeric };
+}
+
+// ── Parse & preview ───────────────────────────────────────────────────────────
+
+let parsedData = null;
+
+function tryParse(text) {
+  const err = $('parseError');
+  const preview = $('preview');
+  const actions = $('idleActions');
+
+  text = text.trim();
+  if (!text) {
+    err.classList.remove('visible');
+    preview.classList.remove('visible');
+    actions.style.display = 'none';
+    parsedData = null;
+    return;
+  }
+
+  let data;
+  try { data = JSON.parse(text); } catch (e) {
+    err.textContent = 'Invalid JSON — ' + e.message;
+    err.classList.add('visible');
+    preview.classList.remove('visible');
+    actions.style.display = 'none';
+    parsedData = null;
+    return;
+  }
+
+  // Validate: must have at least one non-$ key with token objects
+  const setKeys = Object.keys(data).filter(k => !k.startsWith('$'));
+  if (!setKeys.length) {
+    err.textContent = 'No token sets found. Paste a TokenForge W3C JSON export.';
+    err.classList.add('visible');
+    preview.classList.remove('visible');
+    actions.style.display = 'none';
+    parsedData = null;
+    return;
+  }
+
+  err.classList.remove('visible');
+  parsedData = data;
+
+  // Build preview
+  const rawOrder = data.$metadata?.tokenSetOrder ?? setKeys;
+  const groups = groupSets(rawOrder);
+  const cards = $('collectionCards');
+  cards.innerHTML = '';
+
+  const ICONS = {
+    semantic:   '🎨',
+    spacing:    '📐',
+    radii:      '⌗',
+    typography: 'T',
+    primitives: '🔷',
+  };
+
+  for (const group of groups) {
+    const keys = group.modes.map(m => m.key);
+    const { total, colors, numeric } = countTokens(data, keys);
+
+    const modeHtml = group.modes.length === 1 && group.modes[0].modeName === 'Default'
+      ? ''
+      : `<div class="mode-pills">${group.modes.map(m => `<span class="pill">${m.modeName}</span>`).join('')}</div>`;
+
+    const icon = ICONS[group.name.toLowerCase()] ?? '🔷';
+
+    const metaParts = [];
+    if (colors > 0) metaParts.push(`${colors} color${colors !== 1 ? 's' : ''}`);
+    if (numeric > 0) metaParts.push(`${numeric} numeric`);
+    if (metaParts.length === 0) metaParts.push('0 tokens');
+
+    cards.insertAdjacentHTML('beforeend', `
+      <div class="collection-card" style="margin-bottom:6px;">
+        <div class="coll-icon">${icon}</div>
+        <div class="coll-body">
+          <div class="coll-name">${group.name}</div>
+          <div class="coll-meta">${metaParts.join(' · ')}</div>
+          ${modeHtml}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="coll-count">${total}</div>
+          <div class="coll-count-label">variables</div>
+        </div>
+      </div>
+    `);
+  }
+
+  preview.classList.add('visible');
+  actions.style.display = 'flex';
+}
+
+// ── Guidance result ───────────────────────────────────────────────────────────
+
+function showGuidanceResult({ sections, nodes }) {
+  const banner = $('resultBanner');
+  banner.className = 'result-banner ok';
+  $('resultTitle').textContent = 'Guidance created';
+  $('resultMsg').textContent = `"🎨 Token Guidance" page is ready — ${sections} section${sections !== 1 ? 's' : ''} built.`;
+
+  $('statRow').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num ok">${sections}</div>
+      <div class="stat-label">sections</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--fg);">${nodes}</div>
+      <div class="stat-label">nodes</div>
+    </div>
+  `;
+
+  $('errorList').style.display = 'none';
+  showState('result');
+}
+
+// ── State transitions ─────────────────────────────────────────────────────────
+
+function showState(name) {
+  $('stateIdle').style.display      = name === 'idle'      ? '' : 'none';
+  $('stateImporting').classList.toggle('visible', name === 'importing');
+  $('stateResult').classList.toggle('visible',    name === 'result');
+}
+
+function showResult({ created, updated, skipped, errors }) {
+  const total = created + updated;
+  const hasErrors = errors && errors.length > 0;
+
+  const banner = $('resultBanner');
+  banner.className = 'result-banner ' + (hasErrors && total === 0 ? 'err' : 'ok');
+  $('resultTitle').textContent = total === 0 ? 'Nothing imported' : 'Import complete';
+  $('resultMsg').textContent = total > 0
+    ? `${total} variable${total !== 1 ? 's' : ''} written to your Figma file.`
+    : 'No variables were created. Check the errors below.';
+
+  $('statRow').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num ok">${created}</div>
+      <div class="stat-label">created</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--fg);">${updated}</div>
+      <div class="stat-label">updated</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num ${skipped > 0 ? 'warn' : ''}">${skipped}</div>
+      <div class="stat-label">skipped</div>
+    </div>
+  `;
+
+  const errList = $('errorList');
+  if (hasErrors) {
+    errList.style.display = '';
+    errList.innerHTML = `<div class="error-list-header">⚠ ${errors.length} warning${errors.length !== 1 ? 's' : ''}</div>` +
+      errors.map(e => `<div class="error-item">${e}</div>`).join('');
+  } else {
+    errList.style.display = 'none';
+  }
+
+  showState('result');
+}
+
+// ── Event wiring ──────────────────────────────────────────────────────────────
+
+// Textarea input
+const jsonInput = $('jsonInput');
+jsonInput.addEventListener('input', () => {
+  $('charCount').textContent = jsonInput.value.length.toLocaleString() + ' chars';
+  tryParse(jsonInput.value);
+});
+
+// File drop zone
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (file) loadFile(file);
+  fileInput.value = '';
+});
+
+function loadFile(file) {
+  if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+    $('parseError').textContent = 'Please select a .json file.';
+    $('parseError').classList.add('visible');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    jsonInput.value = e.target.result;
+    $('charCount').textContent = jsonInput.value.length.toLocaleString() + ' chars';
+    tryParse(jsonInput.value);
+  };
+  reader.readAsText(file);
+}
+
+// Clear button
+$('btnClear').addEventListener('click', () => {
+  jsonInput.value = '';
+  $('charCount').textContent = '0 chars';
+  $('parseError').classList.remove('visible');
+  $('preview').classList.remove('visible');
+  $('idleActions').style.display = 'none';
+  parsedData = null;
+});
+
+// Create Guide button
+$('btnGuide').addEventListener('click', () => {
+  if (!parsedData) return;
+  $('spinnerLabel').textContent = 'Building Token Guidance…';
+  showState('importing');
+  parent.postMessage({ pluginMessage: { type: 'create-guidance', data: parsedData } }, '*');
+});
+
+// Import button
+$('btnImport').addEventListener('click', () => {
+  if (!parsedData) return;
+  $('spinnerLabel').textContent = 'Creating Figma Variables…';
+  showState('importing');
+  parent.postMessage({ pluginMessage: { type: 'import', data: parsedData } }, '*');
+});
+
+// Result buttons
+$('btnDone').addEventListener('click', () => parent.postMessage({ pluginMessage: { type: 'close' } }, '*'));
+$('btnAgain').addEventListener('click', () => {
+  jsonInput.value = '';
+  $('charCount').textContent = '0 chars';
+  $('parseError').classList.remove('visible');
+  $('preview').classList.remove('visible');
+  $('idleActions').style.display = 'none';
+  parsedData = null;
+  showState('idle');
+});
+
+// Close button
+$('btnClose').addEventListener('click', () => parent.postMessage({ pluginMessage: { type: 'close' } }, '*'));
+
+// ── Messages from sandbox ─────────────────────────────────────────────────────
+
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === 'done') {
+    showResult(msg);
+  }
+  if (msg.type === 'done-guidance') {
+    showGuidanceResult(msg);
+  }
+  if (msg.type === 'error') {
+    showResult({ created: 0, updated: 0, skipped: 0, errors: [msg.message] });
+  }
+};
+
+// Init
+showState('idle');
+</script>
+</body>
+</html>
