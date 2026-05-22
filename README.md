@@ -1,8 +1,8 @@
 # FigmaBridge
 
-> Import [TokenForge](https://github.com/oakjoao/tokenforge) design tokens into Figma Variables — collections, modes, and aliases included.
+> Import **TokenForge** design tokens into Figma Variables — collections, modes, and aliases included.
 
-FigmaBridge is the companion Figma plugin for TokenForge. It takes the W3C-format JSON that TokenForge exports and turns it into native Figma Variables, preserving:
+FigmaBridge is the companion Figma plugin for TokenForge, a web app for designing and exporting design tokens. It takes the W3C-format JSON that TokenForge exports and turns it into native Figma Variables, preserving:
 
 - **Collections** — one Figma variable collection per top-level token set (e.g. `Primitives`, `Semantic`).
 - **Modes** — sets nested under a slash (e.g. `semantic/light`, `semantic/dark`) become modes on the same collection.
@@ -43,7 +43,7 @@ FigmaBridge will now appear under **Plugins → Development → FigmaBridge** in
 
 The intended workflow is:
 
-1. Open [TokenForge](https://github.com/oakjoao/tokenforge), sign in, and design your token set (colors, spacing, typography, etc.).
+1. Open TokenForge, sign in, and design your token set (colors, spacing, typography, etc.).
 2. Go to **Export → FigmaBridge** and download `tokens-figmabridge.json`.
 3. In Figma, run **Plugins → Development → FigmaBridge**.
 4. **Drag** the JSON file onto the drop zone (or paste its contents into the text area) and click **Import**.
