@@ -96,6 +96,12 @@ Unresolvable aliases are reported back in the plugin UI; they do not abort the r
 
 FigmaBridge declares `currentuser` only (used so we can attribute changes properly). It does not make any network requests — your tokens never leave your machine.
 
+## Privacy
+
+FigmaBridge does not collect, transmit, or store any personal data. All token parsing happens locally inside the Figma plugin sandbox on your machine. No analytics, no telemetry, no external requests.
+
+For privacy questions, contact: simplestudio88@gmail.com
+
 ## Develop
 
 ```bash
@@ -109,3 +115,7 @@ The plugin is plain TypeScript against `@figma/plugin-typings`. There is no bund
 ## License
 
 MIT. See [LICENSE](LICENSE) if present, otherwise treat as MIT.
+
+---
+
+© 2026 Simple Studio 88. All rights reserved.

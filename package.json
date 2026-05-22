@@ -2,6 +2,8 @@
   "name": "figmabridge",
   "version": "1.0.0",
   "description": "Import TokenForge W3C token exports into Figma Variables",
+  "author": "Simple Studio 88 <simplestudio88@gmail.com>",
+  "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "watch": "tsc -p tsconfig.json --watch"
